@@ -1,0 +1,328 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>PJSIP Monitor - Sections</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      padding: 20px; 
+      background: #f5f5f5;
+    }
+    .header {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .sections-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      gap: 20px;
+    }
+    .section-card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-left: 4px solid #ccc;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .section-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .section-card.online { border-left-color: #28a745; }
+    .section-card.offline { border-left-color: #dc3545; }
+    .section-card.calling { border-left-color: #ffc107; animation: pulse 1s infinite; }
+    
+    @keyframes pulse {
+      0% { border-left-color: #ffc107; }
+      50% { border-left-color: #ff8c00; }
+      100% { border-left-color: #ffc107; }
+    }
+    
+    .section-header {
+      display: flex;
+      justify-content: between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .section-name {
+      font-size: 1.3em;
+      font-weight: bold;
+      color: #333;
+    }
+    .status-indicators {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.8em;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .status-online { background: #d4edda; color: #155724; }
+    .status-offline { background: #f8d7da; color: #721c24; }
+    .status-unknown { background: #e2e3e5; color: #383d41; }
+    .status-calling { background: #fff3cd; color: #856404; }
+    
+    .section-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .btn {
+      padding: 8px 16px;
+      text-decoration: none;
+      border-radius: 4px;
+      font-size: 0.9em;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .btn-primary { background: #007bff; color: white; }
+    .btn-primary:hover { background: #0056b3; }
+    .btn-secondary { background: #6c757d; color: white; }
+    .btn-secondary:hover { background: #545b62; }
+    .btn-success { background: #28a745; color: white; }
+    .btn-success:hover { background: #1e7e34; }
+    
+    .call-info {
+      font-size: 0.9em;
+      color: #666;
+      margin-top: 8px;
+    }
+    .last-update {
+      font-size: 0.8em;
+      color: #999;
+      margin-top: 5px;
+    }
+    
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #dc3545;
+    }
+    .status-dot.connected { background: #28a745; }
+    
+    .create-btn {
+      background: #28a745;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      display: inline-block;
+    }
+    .create-btn:hover { background: #1e7e34; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>📊 PJSIP Monitor - Sections</h1>
+    <div class="connection-status">
+      <div class="status-dot" id="amiStatus"></div>
+      <span id="amiStatusText">Connecting to AMI...</span>
+    </div>
+    <a class="create-btn" href="/new">➕ Create New Section</a>
+  </div>
+
+  <div class="sections-grid">
+    <% sections.forEach(section => { 
+      let cardClass = 'section-card';
+      let statusClass = 'status-unknown';
+      let statusText = 'Unknown';
+      
+      if (section.registrationStatus) {
+        if (section.registrationStatus.includes('Reachable') || section.registrationStatus.includes('OK')) {
+          cardClass += ' online';
+          statusClass = 'status-online';
+          statusText = 'Online';
+        } else if (section.registrationStatus.includes('Unreachable') || section.registrationStatus.includes('UNAVAILABLE')) {
+          cardClass += ' offline';
+          statusClass = 'status-offline';
+          statusText = 'Offline';
+        }
+      }
+      
+      if (section.hasActiveCalls) {
+        cardClass += ' calling';
+      }
+    %>
+      <div class="<%= cardClass %>" data-section="<%= section.name %>">
+        <div class="section-header">
+          <div class="section-name">📱 <%= section.name %></div>
+          <div class="status-indicators">
+            <span class="status-badge <%= statusClass %>"><%= statusText %></span>
+            <% if (section.hasActiveCalls) { %>
+              <span class="status-badge status-calling">📞 <%= section.callsCount %> calls</span>
+            <% } %>
+          </div>
+        </div>
+        
+        <% if (section.hasActiveCalls) { %>
+          <div class="call-info">
+            🔄 Active calls: <%= section.callsCount %>
+          </div>
+        <% } %>
+        
+        <% if (section.lastUpdate) { %>
+          <div class="last-update">
+            Last update: <%= new Date(section.lastUpdate).toLocaleString() %>
+          </div>
+        <% } %>
+        
+        <div class="section-actions">
+          <a href="/edit/<%= section.name %>" class="btn btn-primary">✏️ Edit</a>
+          <a href="/logs/<%= section.name %>" class="btn btn-secondary" target="_blank">📋 Logs</a>
+          <button onclick="refreshSection('<%= section.name %>')" class="btn btn-success">🔄 Refresh</button>
+        </div>
+      </div>
+    <% }); %>
+    
+    <% if (sections.length === 0) { %>
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-name">No sections found</div>
+        </div>
+        <p>Create your first PJSIP section to start monitoring.</p>
+        <a href="/new" class="btn btn-primary">Create Section</a>
+      </div>
+    <% } %>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    
+    socket.on('connect', () => {
+      console.log('Connected to monitoring server');
+      updateAMIStatus(true);
+    });
+    
+    socket.on('disconnect', () => {
+      console.log('Disconnected from monitoring server');
+      updateAMIStatus(false);
+    });
+    
+    socket.on('statusUpdate', (data) => {
+      updateSectionsStatus(data);
+    });
+    
+    function updateAMIStatus(connected) {
+      const dot = document.getElementById('amiStatus');
+      const text = document.getElementById('amiStatusText');
+      
+      if (connected) {
+        dot.classList.add('connected');
+        text.textContent = 'AMI Connected - Real-time monitoring active';
+      } else {
+        dot.classList.remove('connected');
+        text.textContent = 'AMI Disconnected - Monitoring unavailable';
+      }
+    }
+    
+    function updateSectionsStatus(data) {
+      const { endpoints, calls } = data;
+      
+      // Обновляем статусы секций
+      endpoints.forEach(([sectionName, status]) => {
+        const card = document.querySelector(`[data-section="${sectionName}"]`);
+        if (card) {
+          updateSectionCard(card, status, calls);
+        }
+      });
+    }
+    
+    function updateSectionCard(card, status, calls) {
+      const sectionName = card.dataset.section;
+      const activeCalls = calls.filter(([callId, call]) => 
+        call.endpoint.startsWith(sectionName)
+      );
+      
+      // Обновляем классы карточки
+      card.className = 'section-card';
+      
+      if (status.status.includes('Reachable') || status.status.includes('OK')) {
+        card.classList.add('online');
+      } else if (status.status.includes('Unreachable')) {
+        card.classList.add('offline');
+      }
+      
+      if (activeCalls.length > 0) {
+        card.classList.add('calling');
+      }
+      
+      // Обновляем индикаторы статуса
+      const statusIndicators = card.querySelector('.status-indicators');
+      const statusBadge = statusIndicators.querySelector('.status-badge:first-child');
+      
+      if (status.status.includes('Reachable') || status.status.includes('OK')) {
+        statusBadge.className = 'status-badge status-online';
+        statusBadge.textContent = 'Online';
+      } else if (status.status.includes('Unreachable')) {
+        statusBadge.className = 'status-badge status-offline';
+        statusBadge.textContent = 'Offline';
+      } else {
+        statusBadge.className = 'status-badge status-unknown';
+        statusBadge.textContent = 'Unknown';
+      }
+      
+      // Обновляем информацию о звонках
+      let callBadge = statusIndicators.querySelector('.status-calling');
+      if (activeCalls.length > 0) {
+        if (!callBadge) {
+          callBadge = document.createElement('span');
+          callBadge.className = 'status-badge status-calling';
+          statusIndicators.appendChild(callBadge);
+        }
+        callBadge.textContent = `📞 ${activeCalls.length} calls`;
+      } else if (callBadge) {
+        callBadge.remove();
+      }
+      
+      // Обновляем время последнего обновления
+      let lastUpdate = card.querySelector('.last-update');
+      if (status.lastUpdate) {
+        if (!lastUpdate) {
+          lastUpdate = document.createElement('div');
+          lastUpdate.className = 'last-update';
+          card.appendChild(lastUpdate);
+        }
+        lastUpdate.textContent = `Last update: ${new Date(status.lastUpdate).toLocaleString()}`;
+      }
+    }
+    
+    function refreshSection(sectionName) {
+      // Запрос обновления статуса конкретной секции
+      fetch(`/api/status`)
+        .then(response => response.json())
+        .then(data => {
+          console.log('Status refreshed for', sectionName);
+        })
+        .catch(error => {
+          console.error('Failed to refresh status:', error);
+        });
+    }
+    
+    // Автообновление каждые 30 секунд
+    setInterval(() => {
+      if (socket.connected) {
+        socket.emit('requestUpdate');
+      }
+    }, 30000);
+  </script>
+</body>
+</html> 

@@ -1,0 +1,161 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Create New Section</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+</head>
+<body>
+  <h1>Create New Section</h1>
+  <form method="post" action="/new">
+    <div style="margin-bottom: 12px;">
+      <label>Section Identifier (e.g., bx1):</label><br>
+      <input type="text" name="name" required style="width: 50%; padding: 8px; font-size: 1em;" />
+    </div>
+    <div style="margin-bottom: 12px;">
+      <label>Server URI:</label><br>
+      <input type="text" name="serverUri" placeholder="ip.b24-..." style="width: 50%; padding: 8px;" />
+    </div>
+    <div style="margin-bottom: 12px;">
+      <label>Login:</label><br>
+      <input type="text" name="login" placeholder="phone1" style="width: 50%; padding: 8px;" />
+    </div>
+    <div style="margin-bottom: 12px;">
+      <label>Password:</label><br>
+      <input type="text" name="password" placeholder="89e179..." style="width: 50%; padding: 8px;" />
+    </div>
+    <div style="margin-bottom: 12px;">
+      <label>LiveKit IP:</label><br>
+      <input type="text" name="liveKit" placeholder="217.16.18.183" style="width: 50%; padding: 8px;" />
+    </div>
+    <div style="margin-bottom: 12px;">
+      <button type="button" onclick="generateTemplate()">Generate Template</button>
+    </div>
+    <div>
+      <label>Content:</label><br>
+      <textarea id="editor" name="content"></textarea>
+    </div>
+    <div style="margin-top: 12px;">
+      <button type="submit">Create Section</button>
+    </div>
+  </form>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/ini/ini.min.js"></script>
+  <script>
+    const editor = CodeMirror.fromTextArea(document.getElementById('editor'), {
+      mode: 'ini',
+      lineNumbers: true,
+      indentUnit: 2,
+      viewportMargin: Infinity
+    });
+    editor.setSize('100%', '60vh');
+
+    function generateTemplate() {
+      const id = document.querySelector('input[name="name"]').value.trim();
+      const serverUri = document.querySelector('input[name="serverUri"]').value.trim();
+      const login = document.querySelector('input[name="login"]').value.trim();
+      const password = document.querySelector('input[name="password"]').value.trim();
+      const liveKit = document.querySelector('input[name="liveKit"]').value.trim();
+      if (!id || !serverUri || !login || !password || !liveKit) {
+        alert('Please fill all helper fields');
+        return;
+      }
+      const tpl = `[${id}-reg]
+` +
+`type           = registration
+` +
+`server_uri     = sip:${serverUri}
+` +
+`client_uri     = sip:${login}@${serverUri}
+` +
+`outbound_auth  = ${id}-auth
+` +
+`retry_interval = 60
+` +
+`expiration     = 120
+` +
+`transport      = transport-udp
+
+` +
+`[${id}-auth]
+` +
+`type      = auth
+` +
+`auth_type = userpass
+` +
+`username  = ${login}
+` +
+`password  = ${password}
+
+` +
+`[${id}-aor]
+` +
+`type    = aor
+` +
+`contact = sip:${serverUri}:5060
+
+` +
+`[${id}-ep]
+` +
+`type            = endpoint
+` +
+`transport       = transport-udp
+` +
+`context         = from-${id}
+` +
+`disallow        = all
+` +
+`allow           = alaw,ulaw
+` +
+`outbound_auth   = ${id}-auth
+` +
+`aors            = ${id}-aor
+` +
+`; универсальные NAT-параметры
+` +
+`direct_media      = yes           ; ► RTP напрямую
+` +
+`force_rport      = yes
+` +
+`rewrite_contact  = no
+` +
+`rtp_symmetric    = yes
+
+` +
+`[${id}-identify]
+` +
+`type=identify
+` +
+`endpoint=${id}-ep
+` +
+`match_header= t: <sip:${login}@${serverUri}>
+` +
+`match_header = To:<sip:${login}@${serverUri}>
+
+` +
+`[lk-${id}]
+` +
+`type    = aor
+` +
+`contact = sip:${liveKit}:5060
+
+` +
+`[lk-${id}-ep]
+` +
+`type      = endpoint
+` +
+`transport = transport-udp
+` +
+`aors      = lk-${id}
+` +
+`disallow  = all
+` +
+`allow     = alaw,ulaw
+` +
+`direct_media      = yes           ; ► RTP напрямую
+`;
+      editor.setValue(tpl);
+    }
+  </script>
+</body>
+</html> 
